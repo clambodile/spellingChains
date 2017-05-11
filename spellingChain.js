@@ -18,57 +18,54 @@ function main() {
     let dictionary = null;
     fs.readFile('dictionary.txt', 'utf8', (err, data) => {
         if (err) throw err;
-        dictionary = data.split('\n').map(function(c){
+        dictionary = data.split('\n').map(function (c) {
             return c.toLowerCase()
-        }).reduce(function(dict, word) {
+        }).reduce(function (dict, word) {
             if (dict[word] === undefined) {
                 dict[word] = word;
             }
             return dict;
-        }, {});
-        console.log('longest chain!\n', longestChain(dictionary));
-        
+        }, {'a':'a', 'i':'i', 'o':'o'}); //3 1-letter words not included in dictionary.txt
+        console.log(longestChain(dictionary));
     });
-
 }
 
 function longestChain(dictionary) {
-    const dictObj = Object.keys(dictionary);
-    return Object.keys(dictionary).reduceRight(function(longest, word) {
+    return Object.keys(dictionary).reduce(function(longest, word) {
         const wChain = checkChain(word, dictionary);
-        const wValid = (wChain.length > 0) && wChain.slice(-1)[0].length < 3;
+        const wValid = (wChain.length > 0) && wChain.slice(-1)[0].length == 1;
         if (wValid && (wChain.length > longest.length)) return wChain;
         else return longest;
-    }, ['h']);
+    }, []);
 }
 
 function checkChain(word, dictionary) {
-    const wordValid = (dictionary && dictionary[word] !== undefined);
     const wordL = word.slice(0, word.length - 1);
     const wordLValid = dictionary[wordL] !== undefined;
     const wordR = word.slice(1);
     const wordRValid = dictionary[wordR] !== undefined;
 
+    //base case
     if (!wordLValid && !wordRValid) {
         return [word];
     }
 
-    const wordLChain = checkChain(wordL, dictionary);
-    const wordRChain = checkChain(wordR, dictionary);
+    const wordLChain = [word].concat(checkChain(wordL, dictionary));
+    const wordRChain = [word].concat(checkChain(wordR, dictionary));
 
     if (wordLValid && wordRValid) {
-        return wordLChain.length >= wordRChain.length ? [word].concat(wordLChain) : [word].concat(wordRChain);
+        return wordLChain.length >= wordRChain.length ? wordLChain : wordRChain
     }
-    else if (wordLValid) return [word].concat(wordLChain);
-    else if (wordRValid) return [word].concat(wordRChain);
-    else return [];
+    else if (wordLValid) return wordLChain;
+    else return wordRChain; 
 }
 
 function findLongest(words) {
-    return words.reduce(function(acc, word) {
+    return words.reduce(function (acc, word) {
         const len1 = acc.length
         const len2 = word.length
         return len1 > len2 ? acc : word;
-    }, '')
+    }, '');
 }
+
 main();
