@@ -1,71 +1,27 @@
-// A word is a "spelling chain" if you can remove one letter from it at a time, 
-// all the way down to 1 letter, and have a valid word of the same language the 
-// whole time.
+const fs = require('fs');
 
-// Examples 1: dados -> dado -> ado -> do -> O ; dado is a chain
-// Ex 2: ideals -> ideal -> idea -> ide -> id -> I; ideals is a chain
-// Ex 3: cull -x> NOT a chain; neither cul nor ull are English words.
+const longest = list => list.reduce((acc, word) => (acc.length > word.length ? acc : word));
+const isValid = chain => chain.length > 0 && chain.slice(-1)[0].length == 1;
 
-// What is the longest "spelling chain" in the English language?
+const longestChain = dictionary =>
+	longest(
+		Array.from(dictionary.values()).map(word => checkChain(word, dictionary)).filter(isValid)
+	);
 
-//TODO:
-// Take a filename as a command-line argument
-// Refactor
+const checkChain = (word, dictionary) => {
+	const wordL = word.slice(0, word.length - 1);
+	const wordR = word.slice(1);
 
-var fs = require('fs');
+	return !dictionary.has(wordL) && !dictionary.has(wordR)
+		? [word] // base case
+		: [word].concat(longest(checkChain(wordL, dictionary), checkChain(wordR, dictionary)));
+};
 
-function main() {
-    let dictionary = null;
-    fs.readFile('dictionary.txt', 'utf8', (err, data) => {
-        if (err) throw err;
-        dictionary = data.split('\n').map(function (c) {
-            return c.toLowerCase()
-        }).reduce(function (dict, word) {
-            if (dict[word] === undefined) {
-                dict[word] = word;
-            }
-            return dict;
-        }, {'a':'a', 'i':'i', 'o':'o'}); //3 1-letter words not included in dictionary.txt
-        console.log(longestChain(dictionary));
-    });
-}
-
-function longestChain(dictionary) {
-    return Object.keys(dictionary).reduce(function(longest, word) {
-        const wChain = checkChain(word, dictionary);
-        const wValid = (wChain.length > 0) && wChain.slice(-1)[0].length == 1;
-        if (wValid && (wChain.length > longest.length)) return wChain;
-        else return longest;
-    }, []);
-}
-
-function checkChain(word, dictionary) {
-    const wordL = word.slice(0, word.length - 1);
-    const wordLValid = dictionary[wordL] !== undefined;
-    const wordR = word.slice(1);
-    const wordRValid = dictionary[wordR] !== undefined;
-
-    //base case
-    if (!wordLValid && !wordRValid) {
-        return [word];
-    }
-
-    const wordLChain = [word].concat(checkChain(wordL, dictionary));
-    const wordRChain = [word].concat(checkChain(wordR, dictionary));
-
-    if (wordLValid && wordRValid) {
-        return wordLChain.length >= wordRChain.length ? wordLChain : wordRChain
-    }
-    else if (wordLValid) return wordLChain;
-    else return wordRChain; 
-}
-
-function findLongest(words) {
-    return words.reduce(function (acc, word) {
-        const len1 = acc.length
-        const len2 = word.length
-        return len1 > len2 ? acc : word;
-    }, '');
-}
-
-main();
+const dictionary = new Set(
+	fs
+		.readFileSync('dictionary.txt', 'utf8')
+		.split('\n')
+		.map(str => str.toLowerCase())
+		.concat(['a', 'i', 'o'])
+);
+console.log(longestChain(dictionary));
