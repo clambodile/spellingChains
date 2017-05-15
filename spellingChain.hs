@@ -2,21 +2,20 @@ import Data.Char
 import qualified Data.Map as Map
 import System.IO
 
-data Dictionary = String
-
 main = do
   contents <- readFile "dictionary.txt"
-  let dictionary = map (map toLower) $ words contents
-  putStr $ unlines $ spellingChain "hope" dictionary
+  let wordList = words $ map toLower contents
+      dictionary = Map.fromList $ zip wordList wordList
+  putStr $ unlines $ foldl1 longest $ map (flip spellingChain dictionary) wordList
   
   
-spellingChain :: String -> [String] -> [String]
+spellingChain :: String -> Map.Map String String -> [String]
 spellingChain "" _ = []
 spellingChain (x:[]) _ = if x `elem` ['a', 'i', 'o'] then [x:""] else []
-spellingChain word@(x:xs) dict =
+spellingChain word dict =
   let lChain = spellingChain (init word) dict
       rChain = spellingChain (tail word) dict
-      valid = word `elem` dict
+      valid = Map.member word dict
   in if valid then word : (longest lChain rChain) else []
 
 longest :: [a] -> [a] -> [a]
